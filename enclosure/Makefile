@@ -4,18 +4,11 @@ BUILD := build
 
 DEPS := \
 	params.scad \
-	lib/shell.scad \
 	lib/choc_v2.scad \
 	lib/sanwa.scad \
-	lib/clusters/directional_4.scad \
-	lib/clusters/face_8.scad \
 	lib/clusters/may_face.scad
 
 STLS := \
-	$(BUILD)/left_top.stl \
-	$(BUILD)/left_tray.stl \
-	$(BUILD)/right_top.stl \
-	$(BUILD)/right_tray.stl \
 	$(BUILD)/may_left_top.stl \
 	$(BUILD)/may_left_tray.stl \
 	$(BUILD)/may_right_top.stl \
@@ -25,18 +18,6 @@ all: $(STLS)
 
 $(BUILD):
 	mkdir -p $@
-
-$(BUILD)/left_top.stl: left.scad $(DEPS) | $(BUILD)
-	$(OPENSCAD) -o $@ -D 'part="top"' $<
-
-$(BUILD)/left_tray.stl: left.scad $(DEPS) | $(BUILD)
-	$(OPENSCAD) -o $@ -D 'part="tray"' $<
-
-$(BUILD)/right_top.stl: right.scad $(DEPS) | $(BUILD)
-	$(OPENSCAD) -o $@ -D 'part="top"' $<
-
-$(BUILD)/right_tray.stl: right.scad $(DEPS) | $(BUILD)
-	$(OPENSCAD) -o $@ -D 'part="tray"' $<
 
 $(BUILD)/may_left_top.stl: may.scad $(DEPS) | $(BUILD)
 	$(OPENSCAD) -o $@ -D 'side="left"' -D 'part="top"' $<
@@ -51,13 +32,7 @@ $(BUILD)/may_right_tray.stl: may.scad $(DEPS) | $(BUILD)
 	$(OPENSCAD) -o $@ -D 'side="right"' -D 'part="tray"' $<
 
 # Quick PNG previews (handy for terminal-only inspection)
-preview: $(BUILD)/left_preview.png $(BUILD)/right_preview.png $(BUILD)/may_preview.png
-
-$(BUILD)/left_preview.png: left.scad $(DEPS) | $(BUILD)
-	$(OPENSCAD) -o $@ --imgsize=1200,900 --colorscheme=Tomorrow $<
-
-$(BUILD)/right_preview.png: right.scad $(DEPS) | $(BUILD)
-	$(OPENSCAD) -o $@ --imgsize=1200,900 --colorscheme=Tomorrow $<
+preview: $(BUILD)/may_preview.png
 
 $(BUILD)/may_preview.png: may.scad $(DEPS) | $(BUILD)
 	$(OPENSCAD) -o $@ --imgsize=1400,1000 --colorscheme=Tomorrow $<

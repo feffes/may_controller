@@ -83,9 +83,16 @@ in unless you specifically want to drop them.
 - Inner corner radii: minimum 3.0 mm (assumes a 6 mm flat end-mill). If
   the shop's available cutter differs, update `metal_min_internal_r` in
   `params.scad` and regenerate.
-- USB-C cutout: 23 × 12 mm rectangle on the top edge, carried over from
-  the lfet original (panel-mount style; fits a USB-C breakout or
-  straddle-mount receptacle).
+- USB cutouts on the inner long edge: three notches through the inner
+  wall (the long straight side that faces the other half — right edge of
+  the left half, left edge of the right half). In series from the top
+  edge going down: USB-C (9 mm wide), USB-C (9 mm wide), micro USB-A
+  (7 mm wide), with 4 mm gaps and the first cutout 8 mm below the top
+  edge. Each cutout passes through the full 2.5 mm wall thickness and
+  extends in z from the top of the pocket floor (z = 1.5 mm) up to the
+  top of the wall (z = 8.6 mm) — an open-top notch closed off by the
+  top plate when assembled. PCB design must place the three receptacles
+  so their mouths land within this z-band; see the open-issue note below.
 
 ## Top plate
 
@@ -94,8 +101,14 @@ in unless you specifically want to drop them.
 - Always-present through-cuts:
   - Round button holes: 24 mm and 30 mm circles per the button-layout
     note above.
-  - USB-C cutout: 23 × 12 mm rectangle.
+  - OLED window: 26 × 14 mm rectangle, centred at (130, 110) in the
+    pre-mirror local frame (top-left corner of the assembled right
+    controller; top-right of the left). Sized for an SSD1315 0.96"
+    OLED breakout viewable area.
   - Cosmetic panel-screw row: 6 × 2.4 mm holes.
+- The top plate has **no USB cutouts**; USB is in the tray wall (see Tray
+  section). The top plate sits flush over the wall notches and forms
+  their upper closure.
 
 ### `screws_from = "top"` (use top.dxf)
 
@@ -115,8 +128,8 @@ in unless you specifically want to drop them.
   post has a blind M3 × 0.5 tapped hole opening at its bottom face, with
   2.5 mm tap-drill, depth ≥ 6 mm.
 - Use `top.step` for machining — DXF can't represent the pendant posts.
-  `top.dxf` is still produced as a 2D layout reference (button positions,
-  USB cutout, outer profile).
+  `top.dxf` is still produced as a 2D layout reference (button positions
+  and outer profile).
 
 ## Screws (BOM)
 
@@ -130,12 +143,22 @@ M3 × 6 also works if the shop reduces tap depth in the post to 4 mm.
 
 - [ ] Confirm button-hole diameters (24 mm / 30 mm) against the actual
       keycaps you intend to use, including any rim/lip allowance.
+- [ ] Confirm the 26 × 14 mm OLED window matches the chosen module's
+      viewable area (currently sized for a generic SSD1315 0.96" breakout).
 - [ ] Confirm shop's available end-mill diameter; update
       `metal_min_internal_r` to `(tool_dia / 2) + 0.1` if not 6 mm.
 - [ ] Decide whether to keep the cosmetic panel-screw row of 2.4 mm
       holes near the top edge.
-- [ ] Confirm the USB-C cutout matches the receptacle / breakout you'll
-      use; the 23 × 12 mm slot is generous and may need tightening.
+- [ ] Confirm the three inner-edge USB cutout widths match the chosen
+      receptacles (USB-C panel cutout typ. 9 mm; micro USB-A typ. 7 mm)
+      and that the chosen receptacles' mouth centerline lands within
+      z ≈ 1.5–8.6 mm relative to the tray floor.
+- [ ] **Receptacle clearance vs top plate:** a typical SMT USB-C mouth
+      centred ~1.5 mm above the PCB top (PCB top at z = 8.1) projects
+      to z ≈ 7.85–11.35, which exceeds the wall top (z = 8.6). If the
+      final PCB places the receptacles such that the mouth extends above
+      the wall, the top plate will need matching edge notches — not
+      designed for in this revision; catch it before quoting.
 - [ ] Sanity-check that the (42, 42) post inside the chamfer doesn't
       clash with any of the button positions.
 - [ ] Print one tray in PLA (with `metal_mode = true`) on the FDM

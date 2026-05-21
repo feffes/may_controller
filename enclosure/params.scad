@@ -78,33 +78,27 @@ face_button_pitch      = 24;    // classic hitbox spacing
 
 // ---------- PCB ----------
 pcb_thickness          = 1.6;
-pcb_left_w             = 0;     // TBD: set after pcb/may_left outline exists
-pcb_left_h             = 0;
-pcb_right_w            = 0;
-pcb_right_h            = 0;
-
-// ---------- USB-C cutouts ----------
-// Each half has one host USB-C and one inter-half USB-C (carrying I2C).
-usb_c_cutout_w         = 9.0;   // TBD verify against chosen receptacle
-usb_c_cutout_h         = 3.5;
-
-// ---------- per-half shell outer dimensions ----------
-// Used only by the (legacy) left.scad / right.scad. The current working
-// design is may.scad, which uses a fixed 160×132 chamfered outline.
-left_shell_size        = [110, 100];
-right_shell_size       = [150, 100];
 
 // ---------- OLED window (SSD1315 0.96" common module) ----------
-oled_window_w          = 26;    // TBD verify against actual module
+// Through-cut in the top plate. Centre is in may.scad's local pre-mirror
+// frame — same position on both halves, so the mirror puts the window
+// in the top-left of the right controller and the top-right of the left,
+// each facing outward toward its hand.
+oled_window_w          = 26;            // TBD verify against actual module
 oled_window_h          = 14;
+oled_window_centre     = [130, 110];
 
-// ---------- layout ----------
-left_cluster_buttons   = 4;
-right_cluster_buttons  = 8;
-has_thumb_button_left  = false;
-has_thumb_button_right = false;
-has_oled_left          = true;
-has_oled_right         = true;
+// ---------- USB cutouts (inner edge of each half) ----------
+// Two USB-C (host + inter-half I2C link) and one micro USB-A in series,
+// top-aligned on the inner long edge (x = 160 in may.scad local frame).
+// Each cutout is a notch through the full wall thickness (in x) running
+// from z = floor_thickness up to z = tray_height — open at the top of
+// the wall so the receptacle's mouth elevation has some latitude until
+// the PCB outline is drawn.
+usb_c_w                = 9.0;   // panel cutout width along y (TBD verify)
+usb_a_micro_w          = 7.0;   // micro USB-A panel cutout width along y
+usb_top_edge_margin    = 8.0;   // y from top edge (132) to first cutout
+usb_inter_gap          = 4.0;   // gap between adjacent cutouts
 
 // ---------- derived ----------
 tray_height = floor_thickness + ledge_height + pcb_thickness + pcb_clearance;

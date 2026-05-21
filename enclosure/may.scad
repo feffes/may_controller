@@ -14,7 +14,6 @@
 // GUI:  open this file, hit F5; toggle side / part / switch_style via Customizer.
 
 include <params.scad>
-use <lib/shell.scad>
 use <lib/choc_v2.scad>
 use <lib/sanwa.scad>
 include <lib/clusters/may_face.scad>
@@ -58,11 +57,6 @@ may_outline_pts = [
     [   0,  56 ],
 ];
 
-// ---------- USB-C panel cutout (top-side rectangle) ----------
-// FreeCAD: 23 × 12 at original (140-163, 116-128) → shifted (130-153, 106-118)
-may_usb_origin = [130, 106];
-may_usb_size   = [ 23,  12];
-
 // ---------- screw post positions in the tray ----------
 // Four positions inset from the body, accounting for the chamfer.
 may_post_positions = [
@@ -71,6 +65,34 @@ may_post_positions = [
     [160 - edge_to_first_screw,        edge_to_first_screw],   // bottom-right
     [42, 42],                                                  // chamfer corner
 ];
+
+// Screw post: free-standing boss.
+// metal_mode = true  → 6 mm OD integral post with blind M3 tap-drill hole.
+// metal_mode = false → 8 mm OD printed boss with heat-set insert pocket.
+// tap_at = "top"     → tapped hole opens at the post's top face (z = height).
+// tap_at = "bottom"  → tapped hole opens at the post's bottom face (z = 0).
+//                      Use this when the post hangs from the top plate and
+//                      the screw threads up from below.
+module screw_post(height, tap_at = "top") {
+    eps = 0.01;
+    hole_z = (tap_at == "top") ? height - metal_m3_tap_depth : -eps;
+    hs_hole_z = (tap_at == "top") ? height - heatset_hole_depth : -eps;
+    if (metal_mode) {
+        difference() {
+            cylinder(d = metal_post_d, h = height);
+            translate([0, 0, hole_z])
+                cylinder(d = metal_m3_tap_drill,
+                         h = metal_m3_tap_depth + eps);
+        }
+    } else {
+        difference() {
+            cylinder(d = screw_post_outer_dia, h = height);
+            translate([0, 0, hs_hole_z])
+                cylinder(d = heatset_hole_dia,
+                         h = heatset_hole_depth + eps);
+        }
+    }
+}
 
 module may_outline_2d() {
     polygon(may_outline_pts);
@@ -102,9 +124,11 @@ module may_top() {
             translate([xy.x, xy.y, 0])
                 may_button_cutout(30);
 
-        // USB-C panel cutout
-        translate([may_usb_origin.x, may_usb_origin.y, -eps])
-            cube([may_usb_size.x, may_usb_size.y, top_thickness + 2 * eps]);
+        // OLED viewable-area window (rectangular through-cut)
+        translate([oled_window_centre.x - oled_window_w/2,
+                   oled_window_centre.y - oled_window_h/2,
+                   -eps])
+            cube([oled_window_w, oled_window_h, top_thickness + 2 * eps]);
 
         // top-side panel screws (M2 free-fit, kept for FreeCAD fidelity)
         for (xy = may_top_screws)
@@ -151,6 +175,28 @@ module may_cavity_2d(d) {
         offset(delta = -d) may_outline_2d();
 }
 
+// Three USB cutouts in series on the inner long edge (x = 160 in local
+// frame; the right half's flip_if_right() puts these on its left side).
+// Each cutout passes through the full wall thickness in x and extends from
+// z = floor_thickness up to z = tray_height — an open notch at the top so
+// the receptacle's mouth elevation has tolerance until the PCB is drawn.
+module may_usb_wall_cutouts() {
+    eps = 0.01;
+    widths = [usb_c_w, usb_c_w, usb_a_micro_w];
+    c0 = 132 - usb_top_edge_margin - widths[0] / 2;
+    c1 = c0 - widths[0]/2 - usb_inter_gap - widths[1]/2;
+    c2 = c1 - widths[1]/2 - usb_inter_gap - widths[2]/2;
+    centres = [c0, c1, c2];
+
+    for (i = [0 : len(widths) - 1])
+        translate([160 - wall_thickness - eps,
+                   centres[i] - widths[i]/2,
+                   floor_thickness])
+            cube([wall_thickness + 2 * eps,
+                  widths[i],
+                  tray_height - floor_thickness + eps]);
+}
+
 module may_tray() {
     eps = 0.01;
     difference() {
@@ -165,6 +211,9 @@ module may_tray() {
         translate([0, 0, floor_thickness + ledge_height])
             linear_extrude(tray_height - floor_thickness - ledge_height + eps)
                 may_cavity_2d(wall_thickness + ledge_width);
+
+        // USB cutouts through the inner long edge
+        may_usb_wall_cutouts();
 
         // floor clearance holes + bottom-face countersinks (only when
         // screws enter from below; with top-screws the floor is solid here)
@@ -206,6 +255,6 @@ else if (part == "top_dxf") projection(cut = false) flip_if_right() may_top();
 else {
     flip_if_right() may_tray();
     color("DimGray", 0.6)
-        translate([0, 0, tray_height + 1])
+        translate([0, 0, tray_height])
             flip_if_right() may_top();
 }
