@@ -1,0 +1,27 @@
+# OpenSCAD build artefacts
+build/
+*.stl
+*.3mf
+*.csg
+*.echo
+
+# KiCad
+*.kicad_prl
+*-backups/
+fp-info-cache
+*.bak
+
+# FreeCAD (in case any sneak in)
+*.FCBak
+
+# Editor / OS
+.DS_Store
+*~
+.#*
+\#*#
+.idea/
+.vscode/
+
+# Firmware build
+firmware/build/
+firmware/.pio/

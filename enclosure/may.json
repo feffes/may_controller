@@ -1,0 +1,21 @@
+{
+    "parameterSets": {
+        "left": {
+            "may_outline_pts": "[[0, 132], [160, 132], [160, 0], [70, 0], [0, 56]]",
+            "may_usb_origin": "[130, 106]",
+            "may_usb_size": "[23, 12]",
+            "part": "preview",
+            "side": "left",
+            "switch_style": "sanwa"
+        },
+        "right": {
+            "may_outline_pts": "[[0, 132], [160, 132], [160, 0], [70, 0], [0, 56]]",
+            "may_usb_origin": "[130, 106]",
+            "may_usb_size": "[23, 12]",
+            "part": "preview",
+            "side": "right",
+            "switch_style": "sanwa"
+        }
+    },
+    "fileFormatVersion": "1"
+}
