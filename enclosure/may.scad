@@ -166,21 +166,13 @@ module may_top() {
     // PCB press ring on plate underside — clamps PCB top down to the ledge.
     // Outer edge aligned with PCB outer edge (offset
     // wall_thickness + pcb_lateral_clearance from outline); inner edge at the
-    // ledge inner edge (offset wall_thickness + ledge_width). Notched at the
-    // USB cutout positions so it doesn't crash into receptacle bodies that
-    // protrude inward from the wall.
+    // ledge inner edge (offset wall_thickness + ledge_width). The entire
+    // inner long edge (x = 160) is omitted so the press ring doesn't crash
+    // into the USB receptacle bodies — the remaining three edges' worth of
+    // ring is plenty of clamping perimeter.
     {
         eps = 0.01;
         press_height = pcb_clearance - 0.1;
-        usb_widths = [usb_c_w, usb_c_w, usb_a_micro_w];
-        stack_h = usb_widths[0] + usb_widths[1] + usb_widths[2]
-                  + 2 * usb_inter_gap;
-        top_y = usb_stack_centre_y + stack_h / 2;
-        c0 = top_y - usb_widths[0] / 2;
-        c1 = c0 - usb_widths[0]/2 - usb_inter_gap - usb_widths[1]/2;
-        c2 = c1 - usb_widths[1]/2 - usb_inter_gap - usb_widths[2]/2;
-        usb_centres = [c0, c1, c2];
-        notch_clearance = 0.5;
 
         translate([0, 0, -press_height])
             linear_extrude(press_height)
@@ -189,12 +181,10 @@ module may_top() {
                         may_cavity_2d(wall_thickness + pcb_lateral_clearance);
                         may_cavity_2d(wall_thickness + ledge_width);
                     }
-                    for (i = [0 : len(usb_widths) - 1])
-                        translate([160 - (wall_thickness + ledge_width) - eps,
-                                   usb_centres[i] - usb_widths[i]/2
-                                       - notch_clearance])
-                            square([wall_thickness + ledge_width + 2 * eps,
-                                    usb_widths[i] + 2 * notch_clearance]);
+                    // remove the ring along the entire inner long edge
+                    translate([160 - (wall_thickness + ledge_width) - eps, -eps])
+                        square([wall_thickness + ledge_width + 2 * eps,
+                                132 + 2 * eps]);
                 }
     }
 }
@@ -222,41 +212,40 @@ module usb_c_face_2d() {
     }
 }
 
-// Micro-USB B panel cutout face: trapezoid, wider edge up.
+// USB-A panel cutout face: rectangle.
 // 2D, drawn in XY with x=horizontal, y=vertical.
-module micro_usb_face_2d() {
-    w_top = usb_a_micro_w;
-    w_bot = usb_a_micro_w * usb_a_micro_taper;
-    h     = usb_a_micro_h;
-    polygon([
-        [-w_top/2, +h/2],
-        [+w_top/2, +h/2],
-        [+w_bot/2, -h/2],
-        [-w_bot/2, -h/2],
-    ]);
+module usb_a_face_2d() {
+    square([usb_a_w, usb_a_h], center = true);
 }
 
 // Three USB cutouts in series on the inner long edge (x = 160 in local
 // frame; the right half's flip_if_right() puts these on its left side).
 // Each cutout is shaped like the actual receptacle's panel opening — USB-C
-// stadium for the two USB-C ports and a trapezoid for the micro-USB port —
-// extruded through the wall depth. Centred on z = PCB top + usb_centre_above_pcb.
+// stadium for the two USB-C ports and a USB-A rectangle for the host port.
+// All three are bottom-mounted (receptacle body hangs below the PCB), so
+// each cutout's top sits at PCB bottom and the cutouts are clustered in
+// the lower half of the shell side. wall_depth spans both wall
+// thicknesses since the cutouts straddle the ledge top.
 module may_usb_wall_cutouts() {
     eps = 0.01;
-    widths  = [usb_c_w, usb_c_w, usb_a_micro_w];
-    is_usb_c = [true, true, false];
+    widths       = [usb_c_w, usb_c_w, usb_a_w];
+    heights      = [usb_c_h, usb_c_h, usb_a_h];
+    is_usb_c     = [true,    true,    false  ];
+    bottom_mount = [true,    true,    true   ];
     stack_h = widths[0] + widths[1] + widths[2] + 2 * usb_inter_gap;
     top_y = usb_stack_centre_y + stack_h / 2;
     c0 = top_y - widths[0] / 2;
     c1 = c0 - widths[0]/2 - usb_inter_gap - widths[1]/2;
     c2 = c1 - widths[1]/2 - usb_inter_gap - widths[2]/2;
     centres = [c0, c1, c2];
-    z_centre = floor_thickness + ledge_height + pcb_thickness + usb_centre_above_pcb;
-    // Above the ledge top the wall is wall_thickness thick (the upper wall
-    // is the narrower of the two — see may_tray for the cavity offsets).
-    wall_depth = wall_thickness;
+    pcb_bottom = floor_thickness + ledge_height;
+    pcb_top    = pcb_bottom + pcb_thickness;
+    wall_depth = wall_thickness + ledge_width;
 
     for (i = [0 : len(widths) - 1])
+        let (z_centre = bottom_mount[i]
+                ? pcb_bottom - heights[i]/2
+                : pcb_top    + heights[i]/2)
         translate([160 - wall_depth - eps, centres[i], z_centre])
             // rotate([90,0,90]) is the cyclic axis permutation
             // (local X→world Y, local Y→world Z, local Z→world X), so the
@@ -265,7 +254,7 @@ module may_usb_wall_cutouts() {
             rotate([90, 0, 90])
                 linear_extrude(height = wall_depth + 2 * eps)
                     if (is_usb_c[i]) usb_c_face_2d();
-                    else             micro_usb_face_2d();
+                    else             usb_a_face_2d();
 }
 
 module may_tray() {
@@ -286,6 +275,25 @@ module may_tray() {
 
         // USB cutouts through the inner long edge
         may_usb_wall_cutouts();
+
+        // Drop the inward-extrusion part of the lower wall (the 2 mm strip
+        // that forms the ledge) in the USB area, so the inner-edge wall is
+        // uniformly wall_thickness-thick across the receptacle stack. Bounded
+        // to a y range that hugs the USB stack with a small margin; the
+        // other three edges (and y outside this band) keep their ledge for
+        // PCB support.
+        {
+            margin = 2;
+            stack_y = usb_c_w + usb_c_w + usb_a_w + 2 * usb_inter_gap;
+            y_lo = usb_stack_centre_y - stack_y/2 - margin;
+            y_hi = usb_stack_centre_y + stack_y/2 + margin;
+            translate([160 - (wall_thickness + ledge_width),
+                       y_lo,
+                       floor_thickness - eps])
+                cube([ledge_width + eps,
+                      y_hi - y_lo,
+                      ledge_height + 2 * eps]);
+        }
 
         // floor clearance holes + bottom-face countersinks (only when
         // screws enter from below; with top-screws the floor is solid here)

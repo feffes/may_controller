@@ -26,11 +26,11 @@ screws_from = "top";
 // ---------- shell construction (carry-over from lfet.FCStd) ----------
 wall_thickness         = metal_mode ? 2.5 : 2;   // outer wall
 floor_thickness        = metal_mode ? 1.5 : 2;   // tray bottom (billet floor under PCB)
-ledge_height           = 5;     // height of inner ledge above floor; PCB rests on top
+ledge_height           = 6;     // height of inner ledge above floor; PCB rests on top — sized to fit a bottom-mounted USB-A receptacle (5.7 mm) below the PCB
 ledge_width            = 2;     // how far the ledge protrudes inward from the wall
 bezel_above_plate      = 3;     // top shell extends this much above the plate (print mode)
 shell_corner_radius    = 4;     // outer corner rounding
-pcb_clearance          = 4.0;   // gap between PCB top and plate bottom — sized to house USB receptacles above the PCB
+pcb_clearance          = 4.0;   // gap between PCB top and plate bottom — sized to house top-mounted USB-C (3.3 mm) above the PCB
 
 // ---------- screw posts (FDM, M3 with brass heat-set inserts) ----------
 // Used only when metal_mode = false. Kept defined so a printed fit-check
@@ -98,12 +98,13 @@ oled_window_centre     = [130, 110];
 // the PCB outline is drawn.
 usb_c_w                = 9.0;   // USB-C panel cutout width along y (TBD verify)
 usb_c_h                = 3.3;   // USB-C panel cutout height along z
-usb_a_micro_w          = 7.0;   // micro USB panel cutout top edge width
-usb_a_micro_h          = 3.0;   // micro USB panel cutout height along z
-usb_a_micro_taper      = 0.85;  // bottom edge width as a fraction of top (trapezoid)
+usb_a_w                = 13.0;  // USB-A panel cutout width along y
+usb_a_h                = 5.7;   // USB-A panel cutout height along z
 usb_stack_centre_y     = 66;    // y of the stack centre (132/2 = mid-edge)
-usb_inter_gap          = 4.0;   // gap between adjacent cutouts
-usb_centre_above_pcb   = 1.65;  // z of receptacle centerline above PCB top (standard USB-C SMT)
+usb_inter_gap          = 7.0;   // gap between adjacent cutouts
+// USB-C is top-mounted (body sits on PCB top, cutout bottom flush with
+// PCB top). USB-A is bottom-mounted (body hangs below PCB, cutout top
+// flush with PCB bottom). See bottom_mount[] in may_usb_wall_cutouts.
 
 // ---------- derived ----------
 tray_height = floor_thickness + ledge_height + pcb_thickness + pcb_clearance;
