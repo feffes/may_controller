@@ -12,24 +12,59 @@ STLS := \
 	$(BUILD)/may_left_top.stl \
 	$(BUILD)/may_left_tray.stl \
 	$(BUILD)/may_right_top.stl \
-	$(BUILD)/may_right_tray.stl
+	$(BUILD)/may_right_tray.stl \
+	$(BUILD)/may_left_top_bs.stl \
+	$(BUILD)/may_left_tray_bs.stl \
+	$(BUILD)/may_right_top_bs.stl \
+	$(BUILD)/may_right_tray_bs.stl \
+	$(BUILD)/may_left_assembled.stl \
+	$(BUILD)/may_right_assembled.stl \
+	$(BUILD)/may_left_assembled_bs.stl \
+	$(BUILD)/may_right_assembled_bs.stl
 
 all: $(STLS)
 
 $(BUILD):
 	mkdir -p $@
 
+# ---------- top-screws (default) ----------
 $(BUILD)/may_left_top.stl: may.scad $(DEPS) | $(BUILD)
-	$(OPENSCAD) -o $@ -D 'side="left"' -D 'part="top"' $<
+	$(OPENSCAD) -o $@ -D 'side="left"' -D 'part="top"' -D 'screws_from="top"' $<
 
 $(BUILD)/may_left_tray.stl: may.scad $(DEPS) | $(BUILD)
-	$(OPENSCAD) -o $@ -D 'side="left"' -D 'part="tray"' $<
+	$(OPENSCAD) -o $@ -D 'side="left"' -D 'part="tray"' -D 'screws_from="top"' $<
 
 $(BUILD)/may_right_top.stl: may.scad $(DEPS) | $(BUILD)
-	$(OPENSCAD) -o $@ -D 'side="right"' -D 'part="top"' $<
+	$(OPENSCAD) -o $@ -D 'side="right"' -D 'part="top"' -D 'screws_from="top"' $<
 
 $(BUILD)/may_right_tray.stl: may.scad $(DEPS) | $(BUILD)
-	$(OPENSCAD) -o $@ -D 'side="right"' -D 'part="tray"' $<
+	$(OPENSCAD) -o $@ -D 'side="right"' -D 'part="tray"' -D 'screws_from="top"' $<
+
+# ---------- bottom-screws variants (_bs suffix) ----------
+$(BUILD)/may_left_top_bs.stl: may.scad $(DEPS) | $(BUILD)
+	$(OPENSCAD) -o $@ -D 'side="left"' -D 'part="top"' -D 'screws_from="bottom"' $<
+
+$(BUILD)/may_left_tray_bs.stl: may.scad $(DEPS) | $(BUILD)
+	$(OPENSCAD) -o $@ -D 'side="left"' -D 'part="tray"' -D 'screws_from="bottom"' $<
+
+$(BUILD)/may_right_top_bs.stl: may.scad $(DEPS) | $(BUILD)
+	$(OPENSCAD) -o $@ -D 'side="right"' -D 'part="top"' -D 'screws_from="bottom"' $<
+
+$(BUILD)/may_right_tray_bs.stl: may.scad $(DEPS) | $(BUILD)
+	$(OPENSCAD) -o $@ -D 'side="right"' -D 'part="tray"' -D 'screws_from="bottom"' $<
+
+# ---------- assembled (tray + top together, the part="preview" branch) ----------
+$(BUILD)/may_left_assembled.stl: may.scad $(DEPS) | $(BUILD)
+	$(OPENSCAD) -o $@ -D 'side="left"' -D 'part="preview"' -D 'screws_from="top"' $<
+
+$(BUILD)/may_right_assembled.stl: may.scad $(DEPS) | $(BUILD)
+	$(OPENSCAD) -o $@ -D 'side="right"' -D 'part="preview"' -D 'screws_from="top"' $<
+
+$(BUILD)/may_left_assembled_bs.stl: may.scad $(DEPS) | $(BUILD)
+	$(OPENSCAD) -o $@ -D 'side="left"' -D 'part="preview"' -D 'screws_from="bottom"' $<
+
+$(BUILD)/may_right_assembled_bs.stl: may.scad $(DEPS) | $(BUILD)
+	$(OPENSCAD) -o $@ -D 'side="right"' -D 'part="preview"' -D 'screws_from="bottom"' $<
 
 # Quick PNG previews (handy for terminal-only inspection)
 preview: $(BUILD)/may_preview.png
