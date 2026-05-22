@@ -30,7 +30,7 @@ ledge_height           = 5;     // height of inner ledge above floor; PCB rests 
 ledge_width            = 2;     // how far the ledge protrudes inward from the wall
 bezel_above_plate      = 3;     // top shell extends this much above the plate (print mode)
 shell_corner_radius    = 4;     // outer corner rounding
-pcb_clearance          = 0.5;   // gap between PCB top and plate bottom
+pcb_clearance          = 4.0;   // gap between PCB top and plate bottom — sized to house USB receptacles above the PCB
 
 // ---------- screw posts (FDM, M3 with brass heat-set inserts) ----------
 // Used only when metal_mode = false. Kept defined so a printed fit-check
@@ -78,6 +78,7 @@ face_button_pitch      = 24;    // classic hitbox spacing
 
 // ---------- PCB ----------
 pcb_thickness          = 1.6;
+pcb_lateral_clearance  = 0.3;   // gap between PCB outer edge and upper-cavity wall
 
 // ---------- OLED window (SSD1315 0.96" common module) ----------
 // Through-cut in the top plate. Centre is in may.scad's local pre-mirror
@@ -90,15 +91,19 @@ oled_window_centre     = [130, 110];
 
 // ---------- USB cutouts (inner edge of each half) ----------
 // Two USB-C (host + inter-half I2C link) and one micro USB-A in series,
-// top-aligned on the inner long edge (x = 160 in may.scad local frame).
+// centred on the inner long edge (x = 160 in may.scad local frame).
 // Each cutout is a notch through the full wall thickness (in x) running
 // from z = floor_thickness up to z = tray_height — open at the top of
 // the wall so the receptacle's mouth elevation has some latitude until
 // the PCB outline is drawn.
-usb_c_w                = 9.0;   // panel cutout width along y (TBD verify)
-usb_a_micro_w          = 7.0;   // micro USB-A panel cutout width along y
-usb_top_edge_margin    = 8.0;   // y from top edge (132) to first cutout
+usb_c_w                = 9.0;   // USB-C panel cutout width along y (TBD verify)
+usb_c_h                = 3.3;   // USB-C panel cutout height along z
+usb_a_micro_w          = 7.0;   // micro USB panel cutout top edge width
+usb_a_micro_h          = 3.0;   // micro USB panel cutout height along z
+usb_a_micro_taper      = 0.85;  // bottom edge width as a fraction of top (trapezoid)
+usb_stack_centre_y     = 66;    // y of the stack centre (132/2 = mid-edge)
 usb_inter_gap          = 4.0;   // gap between adjacent cutouts
+usb_centre_above_pcb   = 1.65;  // z of receptacle centerline above PCB top (standard USB-C SMT)
 
 // ---------- derived ----------
 tray_height = floor_thickness + ledge_height + pcb_thickness + pcb_clearance;
