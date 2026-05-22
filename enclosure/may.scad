@@ -281,18 +281,20 @@ module may_tray() {
         // uniformly wall_thickness-thick across the receptacle stack. Bounded
         // to a y range that hugs the USB stack with a small margin; the
         // other three edges (and y outside this band) keep their ledge for
-        // PCB support.
+        // PCB support. The cuboid overlaps both adjacent cavities by eps to
+        // avoid coplanar faces (which would otherwise render as a flickering
+        // sliver of "wall" in F5 preview).
         {
             margin = 2;
             stack_y = usb_c_w + usb_c_w + usb_a_w + 2 * usb_inter_gap;
             y_lo = usb_stack_centre_y - stack_y/2 - margin;
             y_hi = usb_stack_centre_y + stack_y/2 + margin;
-            translate([160 - (wall_thickness + ledge_width),
+            translate([160 - (wall_thickness + ledge_width) - eps,
                        y_lo,
                        floor_thickness - eps])
-                cube([ledge_width + eps,
+                cube([ledge_width + 2 * eps,
                       y_hi - y_lo,
-                      ledge_height + 2 * eps]);
+                      tray_height - floor_thickness + 2 * eps]);
         }
 
         // floor clearance holes + bottom-face countersinks (only when
