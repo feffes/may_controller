@@ -78,12 +78,16 @@ $(BUILD)/may_preview.png: may.scad $(DEPS) | $(BUILD)
 # dispatch in may.scad.
 
 CNC := \
-	$(BUILD)/may_left_tray.step  \
-	$(BUILD)/may_left_top.dxf    \
-	$(BUILD)/may_left_top.step   \
-	$(BUILD)/may_right_tray.step \
-	$(BUILD)/may_right_top.dxf   \
-	$(BUILD)/may_right_top.step
+	$(BUILD)/may_left_tray.step     \
+	$(BUILD)/may_left_top.dxf       \
+	$(BUILD)/may_left_top.step      \
+	$(BUILD)/may_right_tray.step    \
+	$(BUILD)/may_right_top.dxf      \
+	$(BUILD)/may_right_top.step     \
+	$(BUILD)/may_left_tray_bs.step  \
+	$(BUILD)/may_left_top_bs.step   \
+	$(BUILD)/may_right_tray_bs.step \
+	$(BUILD)/may_right_top_bs.step
 
 cnc: $(CNC)
 
