@@ -69,6 +69,7 @@ raw_buttons_24 = (side == "left") ? may_left_buttons_24 : may_right_buttons_24;
 raw_buttons_30 = (side == "left") ? may_left_buttons_30 : may_right_buttons_30;
 buttons_24 = [for (p = raw_buttons_24) p + cluster_offset];
 buttons_30 = [for (p = raw_buttons_30) p + cluster_offset];
+aux_buttons = [for (p = may_top_screws) p + aux_button_offset];
 
 // ---------- may body outline ----------
 // Width 160 × height 132, bottom-left chamfer from (70, 0) up to (0, 56).
@@ -136,10 +137,13 @@ module may_pivot_negative() {
             translate([0, 0, -eps])
                 cylinder(d = pivot_tap_drill, h = boss_top + 2 * eps);
         } else {
+            pocket_base = boss_top - pivot_insert_depth;
+            // screw clearance from the bottom face up INTO the insert pocket; overlap
+            // the pocket by eps so the two cuts merge (no coincident face across the bore)
             translate([0, 0, -eps])
-                cylinder(d = pivot_screw_clear_dia,
-                         h = boss_top - pivot_insert_depth + eps);
-            translate([0, 0, boss_top - pivot_insert_depth])
+                cylinder(d = pivot_screw_clear_dia, h = pocket_base + 2 * eps);
+            // heat-set insert pocket, open at the boss top
+            translate([0, 0, pocket_base])
                 cylinder(d = pivot_insert_dia, h = pivot_insert_depth + eps);
         }
 }
@@ -152,8 +156,9 @@ module may_pivot_negative() {
 //   metal_mode = true  → boss tapped 1/4-20.
 //   metal_mode = false → 1/4-20 heat-set insert pocketed at the boss top.
 module may_pivot_boss() {
-    translate([pivot_centre.x, pivot_centre.y, floor_thickness])
-        cylinder(d = pivot_boss_dia, h = pivot_boss_rise);
+    eps = 0.01;
+    translate([pivot_centre.x, pivot_centre.y, floor_thickness - eps])
+        cylinder(d = pivot_boss_dia, h = pivot_boss_rise + eps);
 }
 
 module may_button_cutout(diameter) {
@@ -215,8 +220,9 @@ module may_top() {
                        -eps])
                 cube([oled_window_w, oled_window_h, top_thickness + 2 * eps]);
 
-        // top-side panel screws (M2 free-fit, kept for FreeCAD fidelity)
-        for (xy = may_top_screws)
+        // small top-row function buttons (start/select/home/A1-3); Ø2.4 placeholder
+        // holes, nudged inward by aux_button_offset to clear the top-corner post
+        for (xy = aux_buttons)
             translate([xy.x, xy.y, -eps])
                 cylinder(d = 2.4, h = top_thickness + 2 * eps);
 

@@ -82,6 +82,11 @@ face_button_pitch      = 24;    // classic hitbox spacing
 // x=160). The right shift also clears the split chamfer-corner post near [0,56]
 // (~2.6 mm web at 6 mm). +x = toward the inner/split edge.
 cluster_offset         = [6, 0];
+// Inward nudge of the small top-row function buttons (start/select/home/A1-3 —
+// the may_top_screws row), local frame, so the end button clears the top-corner
+// post [9,123]. +x = toward centre; applied to the shared row so it reads as
+// "in" on both mirrored halves. ~5 mm leaves a ~3.3 mm web.
+aux_button_offset      = [5, 0];
 
 // ---------- PCB ----------
 pcb_thickness          = 1.6;
