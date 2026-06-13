@@ -76,6 +76,12 @@ choc_body_clearance    = 15;    // larger cutout above plate for switch body
 
 // ---------- arcade-style face buttons ----------
 face_button_pitch      = 24;    // classic hitbox spacing
+// Deliberate in-plane nudge of BOTH halves' button clusters, in the local
+// (pre-mirror) frame, applied equally so the mirror-matched thumb + start
+// buttons stay symmetric about the pair centreline (both inner edges are local
+// x=160). The right shift also clears the split chamfer-corner post near [0,56]
+// (~2.6 mm web at 6 mm). +x = toward the inner/split edge.
+cluster_offset         = [6, 0];
 
 // ---------- PCB ----------
 pcb_thickness          = 1.6;
@@ -107,11 +113,34 @@ usb_inter_gap          = 7.0;   // gap between adjacent cutouts
 // PCB top). USB-A is bottom-mounted (body hangs below PCB, cutout top
 // flush with PCB bottom). See bottom_mount[] in may_usb_wall_cutouts.
 
+// ---------- lap-mount pivot (tray underside, flush) ----------
+// Single-screw friction mount with a FLAT tray bottom: remove the screw and the
+// controller sits flat on a table. Threads live in a short boss rising from the
+// floor into the lower cavity, stopping just below the PCB. A 1/4"-20 screw
+// enters from below (through the user's plate); the flat tray bottom is the
+// friction face. Loosen to rotate to any angle, tighten to clamp.
+pivot_mount        = true;     // re-declared in may.scad for the Customizer
+pivot_centre       = [80, 66]; // x,y, local pre-mirror frame; footprint mid,
+                               // mirror-invariant -> identical on both halves
+pivot_boss_dia     = 16;       // internal boss OD; also the PCB-underside keep-out Ø
+pivot_pcb_gap      = 0.5;      // gap between boss top and PCB underside
+
+// 1/4"-20 UNC fastener (enters from below, through the user's plate)
+pivot_screw_clear_dia = 6.8;   // 1/4" (6.35) free-fit through the floor (plastic)
+pivot_tap_drill       = 5.1;   // #7 drill, 1/4-20 tap (metal_mode, tapped full depth)
+pivot_insert_dia      = 9.6;   // short 1/4-20 heat-set pocket (plastic). TBD verify
+pivot_insert_depth    = 6.4;   // short (~1/4") insert body length. TBD verify
+// The user's plate supplies the rest: a flat top to clamp against and a 1/4-20
+// screw/thumbscrew from below. No spigot (flat bottom by design).
+
 // ---------- derived ----------
 tray_height = floor_thickness + ledge_height + pcb_thickness + pcb_clearance;
 top_thickness = metal_mode ? metal_top_t
                            : choc_plate_thickness + bezel_above_plate;
 total_height = tray_height + top_thickness;
+// boss rises into the lower cavity but stops short of the PCB; engagement depth
+// = floor_thickness + rise. Clamped so it can never reach the PCB.
+pivot_boss_rise = max(0, ledge_height - pivot_pcb_gap);  // ~5.5 mm
 // clamp the top-edge roundover so it never exceeds the plate (metal top is 1.5 mm)
 top_edge_round_eff = max(0, min(top_edge_round, top_thickness - 0.2));
 

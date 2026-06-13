@@ -61,8 +61,14 @@ metal_mode = true;
 // in may.scad scope, so no cross-include caveat like metal_mode.
 oled_window = true;
 
-buttons_24 = (side == "left") ? may_left_buttons_24 : may_right_buttons_24;
-buttons_30 = (side == "left") ? may_left_buttons_30 : may_right_buttons_30;
+// Central friction pivot on the tray underside for mounting to an external lap
+// plate. Customizer checkbox; consumed only in may.scad scope.
+pivot_mount = true;
+
+raw_buttons_24 = (side == "left") ? may_left_buttons_24 : may_right_buttons_24;
+raw_buttons_30 = (side == "left") ? may_left_buttons_30 : may_right_buttons_30;
+buttons_24 = [for (p = raw_buttons_24) p + cluster_offset];
+buttons_30 = [for (p = raw_buttons_30) p + cluster_offset];
 
 // ---------- may body outline ----------
 // Width 160 × height 132, bottom-left chamfer from (70, 0) up to (0, 56).
@@ -75,12 +81,16 @@ may_outline_pts = [
 ];
 
 // ---------- screw post positions in the tray ----------
-// Four positions inset from the body, accounting for the chamfer.
+// Five positions inset from the body, accounting for the chamfer.
+chamfer_post_clear = 4;   // nudge off the chamfer vertex so the boss clears the angled wall
 may_post_positions = [
     [edge_to_first_screw,        132 - edge_to_first_screw],   // top-left
     [160 - edge_to_first_screw,  132 - edge_to_first_screw],   // top-right
     [160 - edge_to_first_screw,        edge_to_first_screw],   // bottom-right
-    [42, 42],                                                  // chamfer corner
+    // angled (chamfer) corner: two posts, one near each end of the chamfer,
+    // replacing the old single mid-chamfer post at [42,42].
+    [70 + chamfer_post_clear,    edge_to_first_screw],         // near [70,0] end
+    [edge_to_first_screw,        56 + chamfer_post_clear],     // near [0,56] end
 ];
 
 // Screw post: free-standing boss.
@@ -113,6 +123,37 @@ module screw_post(height, tap_at = "top") {
 
 module may_outline_2d() {
     polygon(may_outline_pts);
+}
+
+// Negative for the lap-mount pivot: the flush 1/4-20 hole entering the tray
+// bottom. metal → tap-drill the full depth; plastic → screw clearance up to a
+// heat-set insert pocket open at the boss top (top-installed during assembly).
+module may_pivot_negative() {
+    eps = 0.01;
+    boss_top = floor_thickness + pivot_boss_rise;
+    translate([pivot_centre.x, pivot_centre.y, 0])
+        if (metal_mode) {
+            translate([0, 0, -eps])
+                cylinder(d = pivot_tap_drill, h = boss_top + 2 * eps);
+        } else {
+            translate([0, 0, -eps])
+                cylinder(d = pivot_screw_clear_dia,
+                         h = boss_top - pivot_insert_depth + eps);
+            translate([0, 0, boss_top - pivot_insert_depth])
+                cylinder(d = pivot_insert_dia, h = pivot_insert_depth + eps);
+        }
+}
+
+// Lap-mount pivot boss: rises from the floor top into the lower cavity (stops
+// ~pivot_pcb_gap below the PCB) so the tray BOTTOM stays flat — remove the screw
+// and the controller sits flat on a table. A 1/4-20 screw enters from below; the
+// flat tray bottom is the friction face — loosen to rotate, tighten to lock any
+// angle.
+//   metal_mode = true  → boss tapped 1/4-20.
+//   metal_mode = false → 1/4-20 heat-set insert pocketed at the boss top.
+module may_pivot_boss() {
+    translate([pivot_centre.x, pivot_centre.y, floor_thickness])
+        cylinder(d = pivot_boss_dia, h = pivot_boss_rise);
 }
 
 module may_button_cutout(diameter) {
@@ -215,7 +256,7 @@ module may_top() {
     // into the USB receptacle bodies — the remaining three edges' worth of
     // ring is plenty of clamping perimeter.
     {
-        eps = 0.01;
+        // eps from may_top()'s scope (top of module) is in scope here.
         press_height = pcb_clearance - 0.1;
 
         translate([0, 0, -press_height])
@@ -357,6 +398,9 @@ module may_tray() {
                                  h = metal_screw_csk_depth + eps);
             }
         }
+
+        // pierce the floor for the central lap-mount pivot hole
+        if (pivot_mount) may_pivot_negative();
     }
 
     // floor-mounted screw posts (only when screws enter from above)
@@ -364,6 +408,10 @@ module may_tray() {
         for (xy = may_post_positions)
             translate([xy.x, xy.y, floor_thickness])
                 screw_post(tray_height - floor_thickness);
+
+    // central lap-mount pivot boss, rising into the lower cavity (flat bottom)
+    if (pivot_mount)
+        difference() { may_pivot_boss(); may_pivot_negative(); }
 }
 
 // Right half mirrors the left around x = 160/2 so the chamfer ends up on the
