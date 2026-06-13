@@ -42,7 +42,24 @@ switch_style = "sanwa";
 // (clean top, countersinks on the tray bottom). See params.scad for the
 // full semantics; this declaration mirrors it so the OpenSCAD Customizer
 // picks it up when may.scad is open.
-screws_from = "top";
+screws_from = "bottom";
+
+// Build target: metal (CNC 6061 aluminium) vs plastic (FDM + M3 heat-set
+// inserts). Re-declared here (also in params.scad) so the OpenSCAD Customizer
+// can toggle it — the Customizer only exposes top-level vars of the opened
+// file, and this re-declaration after the include wins ("last assignment in
+// scope wins"), same forwarding pattern as screws_from above. The derived dims
+// in params.scad (top_thickness, tray_height, choc_plate_thickness) read
+// metal_mode lazily, so this override propagates to them and to screw_post().
+// Caveat: the use'd lib modules (choc_v2/sanwa) include params.scad standalone
+// and won't follow this override — only relevant to the non-default
+// switch_style = "choc_v2" direct-mount path.
+metal_mode = true;
+
+// Cut the OLED viewable-area window in the top plate. Turn off for a half with
+// no OLED. Customizer checkbox (top-level var of the opened file); consumed only
+// in may.scad scope, so no cross-include caveat like metal_mode.
+oled_window = true;
 
 buttons_24 = (side == "left") ? may_left_buttons_24 : may_right_buttons_24;
 buttons_30 = (side == "left") ? may_left_buttons_30 : may_right_buttons_30;
@@ -109,10 +126,36 @@ module may_button_cutout(diameter) {
     }
 }
 
+// Top-plate solid: outline extruded to top_thickness with the top OUTER edge
+// rounded over (radius top_edge_round_eff) for palm comfort. The bottom face
+// stays flat/sharp so the plate seats flush on the tray walls.
+module may_top_plate() {
+    r = top_edge_round_eff;
+    if (r <= 0) {
+        linear_extrude(top_thickness) may_outline_2d();
+    } else {
+        union() {
+            // straight body up to where the fillet starts
+            linear_extrude(top_thickness - r) may_outline_2d();
+            // rounded lip: inset outline ⊕ an upper hemisphere. At the lip base
+            // the disk grows the inset outline back to the full outline (flush
+            // with the body); going up it domes inward to the flat top face.
+            translate([0, 0, top_thickness - r])
+                minkowski() {
+                    linear_extrude(0.01) offset(delta = -r) may_outline_2d();
+                    difference() {                 // upper hemisphere of radius r
+                        sphere(r);
+                        translate([0, 0, -r]) cube(2 * r, center = true);
+                    }
+                }
+        }
+    }
+}
+
 module may_top() {
     eps = 0.01;
     difference() {
-        linear_extrude(top_thickness) may_outline_2d();
+        may_top_plate();
 
         // 24 mm holes
         for (xy = buttons_24)
@@ -124,11 +167,12 @@ module may_top() {
             translate([xy.x, xy.y, 0])
                 may_button_cutout(30);
 
-        // OLED viewable-area window (rectangular through-cut)
-        translate([oled_window_centre.x - oled_window_w/2,
-                   oled_window_centre.y - oled_window_h/2,
-                   -eps])
-            cube([oled_window_w, oled_window_h, top_thickness + 2 * eps]);
+        // OLED viewable-area window (rectangular through-cut); optional
+        if (oled_window)
+            translate([oled_window_centre.x - oled_window_w/2,
+                       oled_window_centre.y - oled_window_h/2,
+                       -eps])
+                cube([oled_window_w, oled_window_h, top_thickness + 2 * eps]);
 
         // top-side panel screws (M2 free-fit, kept for FreeCAD fidelity)
         for (xy = may_top_screws)

@@ -31,6 +31,7 @@ ledge_width            = 2;     // how far the ledge protrudes inward from the w
 bezel_above_plate      = 3;     // top shell extends this much above the plate (print mode)
 shell_corner_radius    = 4;     // outer corner rounding
 pcb_clearance          = 4.0;   // gap between PCB top and plate bottom — sized to house top-mounted USB-C (3.3 mm) above the PCB
+top_edge_round         = 1.5;   // roundover radius on the top plate's outer top edge (palm comfort); 0 = sharp. Clamped to plate thickness in derived section.
 
 // ---------- screw posts (FDM, M3 with brass heat-set inserts) ----------
 // Used only when metal_mode = false. Kept defined so a printed fit-check
@@ -111,6 +112,8 @@ tray_height = floor_thickness + ledge_height + pcb_thickness + pcb_clearance;
 top_thickness = metal_mode ? metal_top_t
                            : choc_plate_thickness + bezel_above_plate;
 total_height = tray_height + top_thickness;
+// clamp the top-edge roundover so it never exceeds the plate (metal top is 1.5 mm)
+top_edge_round_eff = max(0, min(top_edge_round, top_thickness - 0.2));
 
 // ---------- render quality ----------
 $fa = 2;
