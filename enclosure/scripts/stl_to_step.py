@@ -1,6 +1,6 @@
 """STL → STEP converter using FreeCAD headless.
 
-Usage (called from Makefile):
+Usage (called from justfile):
     freecadcmd stl_to_step.py -- input.stl output.step
 
 The mesh-to-shape conversion is lossy: pockets become faceted polyhedra,

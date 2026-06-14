@@ -1,0 +1,73 @@
+openscad   := "openscad"
+freecadcmd := "freecadcmd"
+build      := "build"
+
+# default: show available recipes
+default:
+    @just --list
+
+# Render one STL. screws = top|bottom, material = metal|plastic.
+# top/tray -> build/<material>/screws-<screws>/may_<side>_<part>.stl
+# preview  -> build/preview/<material>/screws-<screws>/may_<side>_assembled.stl
+stl side part screws="top" material="metal":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{material}}" in metal) mm=true;; plastic) mm=false;;
+        *) echo "material must be metal|plastic" >&2; exit 1;; esac
+    if [ "{{part}}" = "preview" ]; then
+        dir="{{build}}/preview/{{material}}/screws-{{screws}}"; name="assembled"
+    else
+        dir="{{build}}/{{material}}/screws-{{screws}}"; name="{{part}}"
+    fi
+    mkdir -p "$dir"
+    {{openscad}} -o "$dir/may_{{side}}_$name.stl" \
+        -D 'side="{{side}}"' -D 'part="{{part}}"' -D 'screws_from="{{screws}}"' \
+        -D "metal_mode=$mm" may.scad
+
+# 12 STLs for one material (top+bottom screws, both sides, parts + assembled).
+all-mat material: \
+     (stl "left" "top" "top" material) (stl "left" "tray" "top" material) \
+     (stl "right" "top" "top" material) (stl "right" "tray" "top" material) \
+     (stl "left" "top" "bottom" material) (stl "left" "tray" "bottom" material) \
+     (stl "right" "top" "bottom" material) (stl "right" "tray" "bottom" material) \
+     (stl "left" "preview" "top" material) (stl "right" "preview" "top" material) \
+     (stl "left" "preview" "bottom" material) (stl "right" "preview" "bottom" material)
+
+# All 24 STLs (metal + plastic).
+all: (all-mat "metal") (all-mat "plastic")
+
+# Quick PNG preview (terminal-friendly). material = metal|plastic.
+preview material="metal":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{material}}" in metal) mm=true;; plastic) mm=false;;
+        *) echo "material must be metal|plastic" >&2; exit 1;; esac
+    mkdir -p "{{build}}/preview"
+    {{openscad}} -o "{{build}}/preview/may_preview-{{material}}.png" \
+        --imgsize=1400,1000 --colorscheme=Tomorrow -D "metal_mode=$mm" may.scad
+
+# ---------- CNC artefacts (metal only) ----------
+# STL -> STEP (metal only). Reads build/metal/screws-<screws>/, writes cnc/screws-<screws>/.
+step side part screws="top":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    out="{{build}}/cnc/screws-{{screws}}"; mkdir -p "$out"
+    {{freecadcmd}} scripts/stl_to_step.py -- \
+        "{{build}}/metal/screws-{{screws}}/may_{{side}}_{{part}}.stl" \
+        "$out/may_{{side}}_{{part}}.step"
+
+# Metal top plate -> DXF (flat 2D layout, screws_from = top only).
+dxf side:
+    @mkdir -p {{build}}/cnc/screws-top
+    {{openscad}} -o {{build}}/cnc/screws-top/may_{{side}}_top.dxf \
+        -D 'side="{{side}}"' -D 'part="top_dxf"' -D 'metal_mode=true' may.scad
+
+# `all-mat metal` first so the metal STLs exist before the STEP conversions run.
+cnc: (all-mat "metal") \
+     (step "left" "tray") (step "left" "top") (dxf "left") \
+     (step "right" "tray") (step "right" "top") (dxf "right") \
+     (step "left" "tray" "bottom") (step "left" "top" "bottom") \
+     (step "right" "tray" "bottom") (step "right" "top" "bottom")
+
+clean:
+    rm -rf {{build}}

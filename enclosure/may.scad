@@ -59,7 +59,7 @@ metal_mode = true;
 // Cut the OLED viewable-area window in the top plate. Turn off for a half with
 // no OLED. Customizer checkbox (top-level var of the opened file); consumed only
 // in may.scad scope, so no cross-include caveat like metal_mode.
-oled_window = true;
+oled_window = false;
 
 // Central friction pivot on the tray underside for mounting to an external lap
 // plate. Customizer checkbox; consumed only in may.scad scope.
