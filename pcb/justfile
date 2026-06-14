@@ -1,0 +1,32 @@
+# may_controller PCB bridge recipes.
+# Turns the ergogen layout (single source of truth) into per-half KLE layouts that
+# kbplacer places into the KiCad boards. See WORKFLOW.md for the full process.
+
+venv        := ".venv"
+py          := venv / "bin/python"
+ergogen_dir := "../ergogen"
+build       := "build"
+
+default:
+    @just --list
+
+# One-time toolchain setup: project-local venv + kbplacer + PyYAML.
+# (System pip is PEP-668 managed on Arch, so we keep this in a venv.)
+setup:
+    python3 -m venv {{venv}}
+    {{venv}}/bin/pip install --upgrade pip
+    {{venv}}/bin/pip install kbplacer PyYAML
+
+# Regenerate ergogen's points.yaml (kbplacer needs the --debug points output).
+points:
+    cd {{ergogen_dir}} && npx ergogen config.yaml -o output --debug
+
+# ergogen points -> per-half KLE layouts (build/kle_{left,right}.json).
+# 1 KLE unit == 1 mm, so place with `kbplacer --key-distance 1 1` (see WORKFLOW.md).
+kle: points
+    @mkdir -p {{build}}
+    {{py}} scripts/points_to_kle.py --points {{ergogen_dir}}/output/points/points.yaml --side left  --out {{build}}/kle_left.json
+    {{py}} scripts/points_to_kle.py --points {{ergogen_dir}}/output/points/points.yaml --side right --out {{build}}/kle_right.json
+
+clean:
+    rm -rf {{build}}

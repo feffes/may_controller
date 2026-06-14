@@ -1,15 +1,23 @@
-openscad   := "openscad"
-freecadcmd := "freecadcmd"
-build      := "build"
+openscad    := "openscad"
+freecadcmd  := "freecadcmd"
+build       := "build"
+ergogen_dir := "../ergogen"
 
 # default: show available recipes
 default:
     @just --list
 
+# Regenerate the ergogen layout DXFs (board outline + per-half hole stamps) that
+# may.scad import()s. The layout is the single source of truth — edit
+# ../ergogen/config.yaml, not the .scad. just dedupes this so it runs once per
+# invocation even when `all` fans out to many renders.
+ergogen:
+    cd {{ergogen_dir}} && npx ergogen config.yaml -o output
+
 # Render one STL. screws = top|bottom, material = metal|plastic.
 # top/tray -> build/<material>/screws-<screws>/may_<side>_<part>.stl
 # preview  -> build/preview/<material>/screws-<screws>/may_<side>_assembled.stl
-stl side part screws="top" material="metal":
+stl side part screws="top" material="metal": ergogen
     #!/usr/bin/env bash
     set -euo pipefail
     case "{{material}}" in metal) mm=true;; plastic) mm=false;;
@@ -37,7 +45,7 @@ all-mat material: \
 all: (all-mat "metal") (all-mat "plastic")
 
 # Quick PNG preview (terminal-friendly). material = metal|plastic.
-preview material="metal":
+preview material="metal": ergogen
     #!/usr/bin/env bash
     set -euo pipefail
     case "{{material}}" in metal) mm=true;; plastic) mm=false;;
@@ -57,7 +65,7 @@ step side part screws="top":
         "$out/may_{{side}}_{{part}}.step"
 
 # Metal top plate -> DXF (flat 2D layout, screws_from = top only).
-dxf side:
+dxf side: ergogen
     @mkdir -p {{build}}/cnc/screws-top
     {{openscad}} -o {{build}}/cnc/screws-top/may_{{side}}_top.dxf \
         -D 'side="{{side}}"' -D 'part="top_dxf"' -D 'metal_mode=true' may.scad
@@ -70,4 +78,4 @@ cnc: (all-mat "metal") \
      (step "right" "tray" "bottom") (step "right" "top" "bottom")
 
 clean:
-    rm -rf {{build}}
+    rm -rf {{build}} {{ergogen_dir}}/output

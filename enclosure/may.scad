@@ -71,8 +71,24 @@ buttons_24 = [for (p = raw_buttons_24) p + cluster_offset];
 buttons_30 = [for (p = raw_buttons_30) p + cluster_offset];
 aux_buttons = [for (p = may_top_screws) p + aux_button_offset];
 
-// ---------- may body outline ----------
+// ---------- ergogen-generated layout (single source of truth) ----------
+// The board outline and the keycap/aux button positions are authored ONCE in
+// ../ergogen/config.yaml and consumed here as DXF (see may_outline_2d() and
+// may_top()). Regenerate the DXFs with `just ergogen` (or `npx ergogen` in
+// ../ergogen) before rendering. import() paths resolve relative to THIS file.
+// Posts/pivot/USB stay defined below in SCAD: those drive parametric 3D features
+// (tap holes, countersinks, bosses) that a flat DXF can't parameterise — ergogen
+// still emits anchor_posts/anchor_pivot DXFs for reference, but the 3D mechanics
+// live here.
+ergogen_outline   = "../ergogen/output/outlines/outline_body.dxf";
+ergogen_holes_dxf = (side == "left")
+    ? "../ergogen/output/outlines/holes_left.dxf"
+    : "../ergogen/output/outlines/holes_right.dxf";
+
+// ---------- may body outline (fallback reference) ----------
 // Width 160 × height 132, bottom-left chamfer from (70, 0) up to (0, 56).
+// Kept for reference / offline fallback; the live outline now comes from the
+// ergogen DXF above via may_outline_2d().
 may_outline_pts = [
     [   0, 132 ],
     [ 160, 132 ],
@@ -122,8 +138,11 @@ module screw_post(height, tap_at = "top") {
     }
 }
 
+// Board outline as a 2D profile, imported from the ergogen DXF (single source of
+// truth). The DXF is the 5-edge chamfered polygon; OpenSCAD assembles it into a
+// closed face that offset()/linear_extrude() consume just like the old polygon().
 module may_outline_2d() {
-    polygon(may_outline_pts);
+    import(ergogen_outline);
 }
 
 // Negative for the lap-mount pivot: the flush 1/4-20 hole entering the tray
@@ -203,15 +222,26 @@ module may_top() {
     difference() {
         may_top_plate();
 
-        // 24 mm holes
-        for (xy = buttons_24)
-            translate([xy.x, xy.y, 0])
-                may_button_cutout(24);
-
-        // 30 mm hole (drawn slightly larger for sanwa, same as 24mm cutout for choc)
-        for (xy = buttons_30)
-            translate([xy.x, xy.y, 0])
-                may_button_cutout(30);
+        // ---- keycap + aux button holes ----
+        // Positions are the single-source-of-truth ergogen layout.
+        if (switch_style == "choc_v2") {
+            // Direct Choc v2 mount (non-default): square plate cutouts at the
+            // button centres + Ø2.4 aux plunger holes. Still driven by the SCAD
+            // arrays, which are kept in sync with ergogen/config.yaml.
+            for (xy = buttons_24)
+                translate([xy.x, xy.y, 0]) may_button_cutout(24);
+            for (xy = buttons_30)
+                translate([xy.x, xy.y, 0]) may_button_cutout(30);
+            for (xy = aux_buttons)
+                translate([xy.x, xy.y, -eps])
+                    cylinder(d = 2.4, h = top_thickness + 2 * eps);
+        } else {
+            // Sanwa default: round 24/30 mm keycap holes + Ø2.4 aux plunger
+            // holes, imported as one stamp from ergogen (holes_<side>.dxf).
+            translate([0, 0, -eps])
+                linear_extrude(top_thickness + 2 * eps)
+                    import(ergogen_holes_dxf);
+        }
 
         // OLED viewable-area window (rectangular through-cut); optional
         if (oled_window)
@@ -219,12 +249,6 @@ module may_top() {
                        oled_window_centre.y - oled_window_h/2,
                        -eps])
                 cube([oled_window_w, oled_window_h, top_thickness + 2 * eps]);
-
-        // small top-row function buttons (start/select/home/A1-3); Ø2.4 placeholder
-        // holes, nudged inward by aux_button_offset to clear the top-corner post
-        for (xy = aux_buttons)
-            translate([xy.x, xy.y, -eps])
-                cylinder(d = 2.4, h = top_thickness + 2 * eps);
 
         // corner screw clearances + top-face countersinks (only when
         // screws enter from above; with bottom-screws the top is solid here)

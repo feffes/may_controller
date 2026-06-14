@@ -9,6 +9,10 @@ build/
 ergogen/node_modules/
 ergogen/output/
 
+# pcb bridge (kbplacer venv + generated KLE layouts)
+pcb/.venv/
+pcb/build/
+
 # KiCad
 *.kicad_prl
 *-backups/

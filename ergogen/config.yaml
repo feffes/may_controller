@@ -61,7 +61,11 @@ points:
         c24h: { key.shift: [112.000, 84.0], key.tags: [sw, r24] }
         c24i: { key.shift: [96.600, 31.0], key.tags: [sw, r24] }
         c30a: { key.shift: [127.000, 21.000], key.tags: [sw, r30] }
-    # ---------- shared aux/function row (6 × Ø2.4 mm, cosmetic for now) ----------
+    # ---------- shared aux/function row (start/select/home/A1-3) ----------
+    # 6 × 6×6×9.5 mm THT tactile push buttons (electrokit "Tryckknapp PCB
+    # 6x6x9.5mm"); PCB gets SW_PUSH_6mm footprints (Stage 4). Plate hole is the
+    # plunger pass-through — Ø2.4 here is the may.scad placeholder and likely
+    # needs to grow to ~3.5-4 mm for the real plunger.
     aux:
       anchor.shift: [0, 0]
       rows:
@@ -129,6 +133,21 @@ outlines:
         - { shift: [-90, 0] }    # left along the bottom to the chamfer
         - { shift: [-70, 56] }   # chamfer back to (0,56); auto-closes to start
 
+  # RIGHT PCB Edge.Cuts: the board mirrored about x=80 (chamfer at bottom-RIGHT),
+  # matching the enclosure's flip_if_right() right half. The enclosure mirrors
+  # outline_body at render; the right PCB is a separate board, so it imports this
+  # pre-mirrored outline. (The LEFT PCB uses outline_body directly.)
+  outline_body_right:
+    - what: polygon
+      where: /org/          # vertices: (0,0)->(90,0)->(160,56)->(160,132)->(0,132)
+      operation: add
+      points:
+        - { shift: [90, 0] }     # along the bottom to the chamfer start
+        - { shift: [70, 56] }    # chamfer up to (160,56)  (bottom-right)
+        - { shift: [0, 76] }     # up the right edge to (160,132)
+        - { shift: [-160, 0] }   # across the top to (0,132)
+        - { shift: [0, -132] }   # down the left edge; auto-closes to (0,0)
+
   # Hole STAMPS (union of keycap + aux circles), one per half. The enclosure
   # extrudes these and difference()s them out of the extruded board.
   # 24 mm -> r12, 30 mm -> r15, aux Ø2.4 -> r1.2 (lib/sanwa.scad + may.scad:227).
@@ -152,6 +171,7 @@ outlines:
 
 exports:
   outline_body: outline_body
+  outline_body_right: outline_body_right
   holes_left: holes_left
   holes_right: holes_right
   anchor_posts: anchor_posts

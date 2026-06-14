@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "Kailh_PG1353_Hotswap")(type "KiCad")(uri "${KIPRJMOD}/../lib/Kailh_PG1353_Hotswap.pretty")(options "")(descr "Kailh Choc v2 (PG1353) hotswap socket, vendored from ai03-2725/MX_V2 (MIT)"))
+)
