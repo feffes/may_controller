@@ -5,6 +5,10 @@ build/
 *.csg
 *.echo
 
+# ergogen (layout source of truth; generated artefacts ignored)
+ergogen/node_modules/
+ergogen/output/
+
 # KiCad
 *.kicad_prl
 *-backups/

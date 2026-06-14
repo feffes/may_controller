@@ -1,0 +1,12 @@
+{
+  "name": "may-controller-ergogen",
+  "version": "0.0.0",
+  "private": true,
+  "description": "ergogen layout source of truth for the may_controller split leverless controller. Generates KiCad PCBs (may_left/may_right) and DXF outlines consumed by the OpenSCAD enclosure.",
+  "scripts": {
+    "build": "ergogen config.yaml -o output"
+  },
+  "devDependencies": {
+    "ergogen": "4.2.1"
+  }
+}

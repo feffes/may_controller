@@ -1,0 +1,158 @@
+# may_controller — ergogen layout (single source of truth for switch positions,
+# board outline, and the mechanical anchors the OpenSCAD enclosure imports).
+#
+#   npx ergogen config.yaml -o output --debug
+#
+# Frame: local PRE-MIRROR frame, identical to enclosure/may.scad (board 0..160 in
+# x, 0..132 in y, Y-up). Both halves are authored here in this same frame; the
+# enclosure's flip_if_right() mirrors the right half at render time, exactly as it
+# does today, so the DXFs are emitted un-mirrored per half.
+#
+# Coordinates below already include the SCAD offsets:
+#   face buttons (24/30 mm): + cluster_offset [6,0]
+#   aux row:                 + aux_button_offset [5,0]
+# so they are FINAL positions — change them here, not in the .scad.
+
+meta:
+  engine: 4.2.1
+  name: may
+
+units:
+  # plate keycap-hole diameters (Sanwa snap-in); refine vs lib/sanwa.scad in Stage 2
+  cap24: 24
+  cap30: 30
+  capaux: 2.4
+
+points:
+  key:
+    # arbitrary irregular layout: kill the auto grid advance so each key sits
+    # exactly at its per-key shift.
+    spread: 0
+    padding: 0
+    splay: 0
+    tags: []
+  zones:
+    # ---------- LEFT half face buttons (6 × 24 mm, 1 × 30 mm) ----------
+    lf:
+      anchor.shift: [0, 0]
+      rows:
+        r:
+      columns:
+        c24a: { key.shift: [29.898, 76.568], key.tags: [sw, l24] }
+        c24b: { key.shift: [57.119, 86.568], key.tags: [sw, l24] }
+        c24c: { key.shift: [86.077, 85.000], key.tags: [sw, l24] }
+        c24d: { key.shift: [112.000, 72.000], key.tags: [sw, l24] }
+        c24e: { key.shift: [93.518, 113.029], key.tags: [sw, l24] }
+        c24f: { key.shift: [96.603, 31.000], key.tags: [sw, l24] }
+        c30a: { key.shift: [127.000, 21.000], key.tags: [sw, l30] }
+    # ---------- RIGHT half face buttons (9 × 24 mm, 1 × 30 mm) ----------
+    rf:
+      anchor.shift: [0, 0]
+      rows:
+        r:
+      columns:
+        c24a: { key.shift: [27.275, 63.5], key.tags: [sw, r24] }
+        c24b: { key.shift: [27.275, 92.5], key.tags: [sw, r24] }
+        c24c: { key.shift: [56.170, 66.0], key.tags: [sw, r24] }
+        c24d: { key.shift: [56.170, 95.0], key.tags: [sw, r24] }
+        c24e: { key.shift: [85.170, 66.0], key.tags: [sw, r24] }
+        c24f: { key.shift: [85.170, 95.0], key.tags: [sw, r24] }
+        c24g: { key.shift: [112.000, 55.0], key.tags: [sw, r24] }
+        c24h: { key.shift: [112.000, 84.0], key.tags: [sw, r24] }
+        c24i: { key.shift: [96.600, 31.0], key.tags: [sw, r24] }
+        c30a: { key.shift: [127.000, 21.000], key.tags: [sw, r30] }
+    # ---------- shared aux/function row (6 × Ø2.4 mm, cosmetic for now) ----------
+    aux:
+      anchor.shift: [0, 0]
+      rows:
+        r:
+      columns:
+        a0: { key.shift: [17, 120], key.tags: [aux] }
+        a1: { key.shift: [27, 120], key.tags: [aux] }
+        a2: { key.shift: [37, 120], key.tags: [aux] }
+        a3: { key.shift: [47, 120], key.tags: [aux] }
+        a4: { key.shift: [57, 120], key.tags: [aux] }
+        a5: { key.shift: [67, 120], key.tags: [aux] }
+    # ---------- mechanical anchors (no switches; for enclosure 3D features) ----------
+    post:
+      anchor.shift: [0, 0]
+      rows:
+        r:
+      columns:
+        p0: { key.shift: [9, 123],  key.tags: [post] }
+        p1: { key.shift: [151, 123], key.tags: [post] }
+        p2: { key.shift: [151, 9],  key.tags: [post] }
+        p3: { key.shift: [74, 9],   key.tags: [post] }
+        p4: { key.shift: [9, 60],   key.tags: [post] }
+    pivot:
+      anchor.shift: [0, 0]
+      rows:
+        r:
+      columns:
+        pv: { key.shift: [80, 66], key.tags: [pivot] }
+    usb:
+      anchor.shift: [0, 0]
+      rows:
+        r:
+      columns:
+        u0: { key.shift: [160, 88.5], key.tags: [usb] }
+        u1: { key.shift: [160, 72.5], key.tags: [usb] }
+        u2: { key.shift: [160, 54.5], key.tags: [usb] }
+    # origin [0,0]: anchor the board polygon here so its chained-delta vertices
+    # land at absolute board coordinates (ergogen polygon points are relative).
+    org:
+      anchor.shift: [0, 0]
+      rows:
+        r:
+      columns:
+        o: { key.shift: [0, 0], key.tags: [org] }
+
+# IMPORTANT — ergogen/makerjs boolean caveat (learned the hard way):
+# makerjs' combine (subtract/intersect) is unreliable here. Subtracting interior
+# circles from a POLYGON-based model silently drops them, and subtracting a
+# polygon (the chamfer triangle) mangles the result. So we do NO booleans in
+# ergogen: every outline below is ADD-ONLY (unions of primitives), and the
+# OpenSCAD enclosure performs the difference() of board − holes. OpenSCAD's CSG
+# is exact; ergogen is reduced to emitting positioned primitives.
+outlines:
+  # board edge = 160×132 chamfered polygon (may.scad:76). Pure add -> renders
+  # correctly. Feeds the top plate AND the tray walls; the enclosure subtracts
+  # the hole stamps below from it.
+  outline_body:
+    - what: polygon
+      where: /org/          # pin to origin; vertices below are CHAINED relative deltas
+      operation: add
+      points:               # (0,0)->[0,132]->[160,132]->[160,0]->[70,0]->[0,56]
+        - { shift: [0, 132] }    # up the left edge
+        - { shift: [160, 0] }    # across the top
+        - { shift: [0, -132] }   # down the right edge
+        - { shift: [-90, 0] }    # left along the bottom to the chamfer
+        - { shift: [-70, 56] }   # chamfer back to (0,56); auto-closes to start
+
+  # Hole STAMPS (union of keycap + aux circles), one per half. The enclosure
+  # extrudes these and difference()s them out of the extruded board.
+  # 24 mm -> r12, 30 mm -> r15, aux Ø2.4 -> r1.2 (lib/sanwa.scad + may.scad:227).
+  holes_left:
+    - { what: circle, radius: 12,  where: l24, operation: add }
+    - { what: circle, radius: 15,  where: l30, operation: add }
+    - { what: circle, radius: 1.2, where: aux, operation: add }
+  holes_right:
+    - { what: circle, radius: 12,  where: r24, operation: add }
+    - { what: circle, radius: 15,  where: r30, operation: add }
+    - { what: circle, radius: 1.2, where: aux, operation: add }
+
+  # ---------- anchor position references (boss/pivot footprints) ----------
+  # Position-only stamps the enclosure extrudes in place. Diameters are metal-mode
+  # boss ODs (metal_post_d 6 -> r3, pivot_boss_dia 16 -> r8); per-hole/countersink
+  # mechanics stay parametric in SCAD (see Stage 3).
+  anchor_posts:
+    - { what: circle, radius: 3, where: post, operation: add }
+  anchor_pivot:
+    - { what: circle, radius: 8, where: pivot, operation: add }
+
+exports:
+  outline_body: outline_body
+  holes_left: holes_left
+  holes_right: holes_right
+  anchor_posts: anchor_posts
+  anchor_pivot: anchor_pivot
